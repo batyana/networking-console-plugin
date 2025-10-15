@@ -1,12 +1,15 @@
 import React, { FC } from 'react';
 
 import {
+  K8sVerb,
   ListPageCreateButton,
   ListPageCreateDropdown,
+  useAccessReview,
   useModal,
 } from '@openshift-console/dynamic-plugin-sdk';
 import { useNetworkingTranslation } from '@utils/hooks/useNetworkingTranslation';
 import {
+  ClusterUserDefinedNetworkModel,
   ClusterUserDefinedNetworkModelGroupVersionKind,
   UserDefinedNetworkModel,
   UserDefinedNetworkModelGroupVersionKind,
@@ -32,6 +35,31 @@ const UDNListCreateButton: FC<UDNListCreateButtonProps> = ({ allUDNs, namespace 
       getNamespace(udn) === namespace &&
       isPrimaryUDN(udn),
   );
+
+  const [canCreateClusterUDN] = useAccessReview({
+    group: ClusterUserDefinedNetworkModel.apiGroup,
+    resource: ClusterUserDefinedNetworkModel.plural,
+    verb: 'create' as K8sVerb,
+  });
+
+  if (!canCreateClusterUDN) {
+    return (
+      <ListPageCreateButton
+        className="list-page-create-button-margin"
+        createAccessReview={{
+          groupVersionKind: UserDefinedNetworkModelGroupVersionKind,
+          namespace,
+        }}
+        onClick={() =>
+          createModal(UserDefinedNetworkCreateModal, {
+            isClusterUDN: false,
+          })
+        }
+      >
+        {t('Create UserDefinedNetwork')}
+      </ListPageCreateButton>
+    );
+  }
 
   if (namespaceHavePrimaryUDN) {
     return (
